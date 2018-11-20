@@ -67,6 +67,10 @@ const call = (endpoint, method, params, force) => {
   });
 };
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6dc76cc2fe57e2743448e2c1ca4c3caa08bf1d79
 const getToken = () => call('/oauth/token', 'POST', {
   grant_type: 'client_credentials',
   client_id: process.env.FT_API_UID,
