@@ -1,0 +1,14 @@
+# node
+node_modules/
+package-lock.json
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# dotenv environment variables file
+.env
+
+# Optional eslint cache
+.eslintcache
