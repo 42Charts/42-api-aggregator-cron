@@ -5,31 +5,87 @@ const api = require('../../libraries/api');
 
 const parseHost = (host) => {
   let splited = host;
-  const regexp = new RegExp('[^0-9]+[0-9]+', 'g');
-  const regexpNumbers = new RegExp('[0-9]+', 'g');
+  let post;
+  let zone;
+  let row;
+  let cluster;
+  let zoneNumber = null;
+  let clusterNumber = null;
 
-  splited = splited.match(regexp);
-  if (!splited || !splited.length || !splited[0] || !splited[1] || !splited[2]) {
+  const regexpNumbers = new RegExp('[0-9]+', 'g');
+  const regexZone = new RegExp('[z]+[0-9]+', 'g');
+  const regexCluster = new RegExp('[e,f]+[0-9]+', 'g');
+  const regexRow = new RegExp('[r]+[0-9]+', 'g');
+  const regexPost = new RegExp('[p,s]+[0-9]+', 'g');
+
+  post = splited.match(regexPost);
+  row = splited.match(regexRow);
+  zone = splited.match(regexZone);
+  cluster = splited.match(regexCluster);
+  if (!post || !row || (!zone && !cluster)) {
     return null;
+  }
+  if (zone) {
+    zone = zone[0];
+    zoneNumber = parseInt(zone.match(regexpNumbers)[0], 10);
+  }
+  if (cluster) {
+    cluster = cluster[0];
+    clusterNumber = parseInt(cluster.match(regexpNumbers)[0], 10);
   }
   return {
     hostNotParsed: host,
+    zone: {
+      name: zone,
+      number: zoneNumber,
+    },
     cluster: {
-      name: splited[0],
-      number: parseInt(splited[0].match(regexpNumbers)[0], 10),
+      name: cluster,
+      number: clusterNumber,
     },
     row: {
-      name: splited[1],
-      number: parseInt(splited[1].match(regexpNumbers)[0], 10),
+      name: row[0],
+      number: parseInt(row[0].match(regexpNumbers)[0], 10),
     },
     host: {
-      name: splited[2],
-      number: parseInt(splited[2].match(regexpNumbers)[0], 10),
+      name: post[0],
+      number: parseInt(post[0].match(regexpNumbers)[0], 10),
     },
   };
 };
 
+const registerZone = (zone, campusID, clusterID, callback) => {
+  if (!zone.name) {
+    return callback();
+  }
+  let query = 'SELECT ID FROM ZONES WHERE name=? AND ((campusID=? AND campusID IS NOT NULL) OR (clusterID=? AND clusterID IS NOT NULL))';
+  let values = [zone.name, campusID, clusterID];
+  mysql.query(query, values, (err, result) => {
+    if (err) {
+      return callback(err);
+    }
+    if (result && result.length) {
+      return callback(null, result[0].ID);
+    }
+    const valuesToAdd = [];
+    if (campusID && clusterID) {
+      campusID = null;
+    }
+    valuesToAdd.push([ clusterID, campusID, zone.name, zone.number ]);
+    let query = 'INSERT IGNORE INTO ZONES (clusterID, campusID, name, number) VALUES ?';
+    mysql.query(query, [valuesToAdd], (err, result) => {
+      if (err) {
+        return callback(err);
+      }
+      callback(null, result.insertId);
+    });
+  });
+};
+
 const registerCluster = (cluster, campusID, callback) => {
+  if (!cluster.name) {
+    return callback();
+  }
   let query = 'SELECT ID FROM CLUSTERS WHERE name=? AND campusID=?';
   let values = [cluster.name, campusID];
   mysql.query(query, values, (err, result) => {
@@ -51,9 +107,9 @@ const registerCluster = (cluster, campusID, callback) => {
   });
 };
 
-const registerRow = (row, clusterID, callback) => {
-  let query = 'SELECT ID FROM `ROWS` WHERE name=? AND clusterID=?';
-  let values = [row.name, clusterID];
+const registerRow = (row, clusterID, zoneID, callback) => {
+  let query = 'SELECT ID FROM `ROWS` WHERE name=? AND ((clusterID=? AND clusterID IS NOT NULL) OR (zoneID=? AND zoneID IS NOT NULL))';
+  let values = [row.name, clusterID, zoneID];
   mysql.query(query, values, (err, result) => {
     if (err) {
       return callback(err);
@@ -62,8 +118,11 @@ const registerRow = (row, clusterID, callback) => {
       return callback(null, result[0].ID);
     }
     const valuesToAdd = [];
-    valuesToAdd.push([ clusterID, row.name, row.number ]);
-    let query = 'INSERT IGNORE INTO `ROWS` (clusterID, name, number) VALUES ?';
+    if (clusterID && zoneID) {
+      clusterID = null;
+    }
+    valuesToAdd.push([ clusterID, zoneID, row.name, row.number ]);
+    let query = 'INSERT IGNORE INTO `ROWS` (clusterID, zoneID, name, number) VALUES ?';
     mysql.query(query, [valuesToAdd], (err, result) => {
       if (err) {
         return callback(err);
@@ -73,9 +132,9 @@ const registerRow = (row, clusterID, callback) => {
   });
 };
 
-const registerHost = (host, rowID, callback) => {
-  let query = 'SELECT ID FROM HOSTS WHERE name=? AND rowID=?';
-  let values = [host.name, rowID];
+const registerHost = (hostNotParsed, host, rowID, callback) => {
+  let query = 'SELECT ID FROM HOSTS WHERE name=? AND rowID=? AND fullname=?';
+  let values = [host.name, rowID, hostNotParsed];
   mysql.query(query, values, (err, result) => {
     if (err) {
       return callback(err);
@@ -84,8 +143,8 @@ const registerHost = (host, rowID, callback) => {
       return callback(null, result[0].ID);
     }
     const valuesToAdd = [];
-    valuesToAdd.push([ rowID, host.name, host.number ]);
-    let query = 'INSERT IGNORE INTO HOSTS (rowID, name, number) VALUES ?';
+    valuesToAdd.push([ rowID, host.name, hostNotParsed, host.number ]);
+    let query = 'INSERT IGNORE INTO HOSTS (rowID, name, fullname, number) VALUES ?';
     mysql.query(query, [valuesToAdd], (err, result) => {
       if (err) {
         return callback(err);
@@ -108,40 +167,45 @@ const registerLocations = (locations) => new Promise((resolve, reject) => {
         if (err) {
           return callback(err);
         }
-        registerRow(hostParsed.row, clusterID, (err, rowID) => {
+        registerZone(hostParsed.zone, location.campus_id, clusterID, (err, clusterID) => {
           if (err) {
             return callback(err);
           }
-          registerHost(hostParsed.host, rowID, (err, hostID) => {
+          registerRow(hostParsed.row, clusterID, (err, rowID) => {
             if (err) {
               return callback(err);
             }
-            const beginAt = new Date(location.begin_at);
-            let endAt = null;
-            let logtimeInSeconds = null;
-            let parsedEndAt = null;
-            if (location.end_at) {
-              endAt = new Date(location.end_at);
-              logtimeInSeconds = (endAt.getTime() - beginAt.getTime()) / 1000;
-              parsedEndAt = moment(endAt).format('YYYY-MM-DD HH:mm:ss');
-            }
-            if (!location.user) {
-              return callback();
-            }
-            valuesToAdd.push([
-              location.id,
-              hostID,
-              location.user.id,
-              logtimeInSeconds,
-              moment(beginAt).format('YYYY-MM-DD HH:mm:ss'),
-              parsedEndAt,
-            ]);
-            updateToAdd.push([
-              logtimeInSeconds,
-              parsedEndAt,
-              location.id
-            ]);
-            callback();
+            registerHost(hostParsed.host, rowID, (err, hostID) => {
+              if (err) {
+                return callback(err);
+              }
+              const beginAt = new Date(location.begin_at);
+              let endAt = null;
+              let logtimeInSeconds = null;
+              let parsedEndAt = null;
+              if (location.end_at) {
+                endAt = new Date(location.end_at);
+                logtimeInSeconds = (endAt.getTime() - beginAt.getTime()) / 1000;
+                parsedEndAt = moment(endAt).format('YYYY-MM-DD HH:mm:ss');
+              }
+              if (!location.user) {
+                return callback();
+              }
+              valuesToAdd.push([
+                location.id,
+                hostID,
+                location.user.id,
+                logtimeInSeconds,
+                moment(beginAt).format('YYYY-MM-DD HH:mm:ss'),
+                parsedEndAt,
+              ]);
+              updateToAdd.push([
+                logtimeInSeconds,
+                parsedEndAt,
+                location.id
+              ]);
+              callback();
+            });
           });
         });
       });
@@ -190,9 +254,7 @@ const updateLocations = () => new Promise((resolve, reject) => {
             .then(() => callback())
             .catch(err => callback(err));
         })
-        .catch(err => {
-          callback(err);
-        });
+        .catch(err => callback(err));
     },
     (err) => {
       if (err) {
