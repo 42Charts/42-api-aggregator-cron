@@ -64,7 +64,7 @@ const registerZone = (zone, campusID, clusterID, callback) => {
     if (err) {
       return callback(err);
     }
-    if (result && result.length) {
+    if (result && result[0]) {
       return callback(null, result[0].ID);
     }
     const valuesToAdd = [];
@@ -167,15 +167,15 @@ const registerLocations = (locations) => new Promise((resolve, reject) => {
         if (err) {
           return callback(err);
         }
-        registerZone(hostParsed.zone, location.campus_id, clusterID, (err, clusterID) => {
+        registerZone(hostParsed.zone, location.campus_id, clusterID, (err, zoneID) => {
           if (err) {
             return callback(err);
           }
-          registerRow(hostParsed.row, clusterID, (err, rowID) => {
+          registerRow(hostParsed.row, clusterID, zoneID, (err, rowID) => {
             if (err) {
               return callback(err);
             }
-            registerHost(hostParsed.host, rowID, (err, hostID) => {
+            registerHost(hostParsed.hostNotParsed, hostParsed.host, rowID, (err, hostID) => {
               if (err) {
                 return callback(err);
               }
