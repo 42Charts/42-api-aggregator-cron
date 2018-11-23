@@ -119,6 +119,12 @@ const usersCursus = (page, size) => call('/v2/cursus_users', 'GET', {
   'page[size]': size,
 });
 
+const apps = (page, size) => call('/v2/apps', 'GET', {
+  'page[number]': page,
+  'page[size]': size,
+});
+
+
 module.exports = {
   getCampus,
   getCoalitions,
@@ -130,4 +136,5 @@ module.exports = {
   getSpecificLocation,
   usersCoalitions,
   usersCursus,
+  apps,
 };
