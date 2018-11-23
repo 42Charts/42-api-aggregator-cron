@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: process.env.PATH_ENV });
 const cron = require('node-cron');
 const cronMinutes = require('./cronTasks/minute');
 const cronWeeks = require('./cronTasks/week');
