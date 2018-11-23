@@ -77,8 +77,9 @@ const getCampus = () => call('/v2/campus', 'GET', {
   'page[size]': 100,
 });
 
-const getCoalitions = () => call('/v2/coalitions', 'GET', {
-  'page[size]': 100,
+const getCoalitions = (page, size) => call('/v2/coalitions', 'GET', {
+  'page[number]': page,
+  'page[size]': size,
 });
 
 const getCursus = () => call('/v2/cursus', 'GET', {
