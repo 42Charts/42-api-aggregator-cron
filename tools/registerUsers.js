@@ -112,7 +112,7 @@ const registerUserProjects = (usersProjects, userId, cb) => {
     if (err) {
       return cb(err);
     }
-    async.each(cursusUsers, (userCursus, callback) => {
+    async.each(usersProjects, (project, callback) => {
       query = 'UPDATE USERSPROJECTS SET status=?, validated=?, finalMark=?, markedAt=?, retries=?, updated=now() WHERE ID=?';
       let markedAt;
       if (project.marked_at) {
