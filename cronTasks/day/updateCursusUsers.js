@@ -44,7 +44,7 @@ const updateCursusUsers = () => new Promise((resolve, reject) => {
             registerUsersCursus(usersCursus, (err) => callback(err));
           });
         })
-        .catch(err => callback(err));
+        .catch(err => callback());
     },
     (err) => {
       if (err) {

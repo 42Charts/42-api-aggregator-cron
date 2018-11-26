@@ -220,7 +220,7 @@ const registerUsers = (users) => new Promise((resolve, reject) => {
     api.getUser(user.id)
       .then((userInfos) => {
         registerUser(userInfos, callback);
-      }).catch(err => callback(err));
+      }).catch(err => callback());
   }, (err) => {
     if (err) {
       return reject(err);
