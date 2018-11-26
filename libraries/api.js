@@ -125,6 +125,13 @@ const apps = (page, size) => call('/v2/apps', 'GET', {
   'page[size]': size,
 });
 
+const getUsers = (page, size, id) => call('/v2/users', 'GET', {
+  'page[number]': page,
+  'page[size]': size,
+  'range[id]': `${id},${id + 10000}`
+});
+
+const getUser = (id) => call(`/v2/users/${id}`, 'GET');
 
 module.exports = {
   getCampus,
@@ -138,4 +145,6 @@ module.exports = {
   usersCoalitions,
   usersCursus,
   apps,
+  getUsers,
+  getUser,
 };
