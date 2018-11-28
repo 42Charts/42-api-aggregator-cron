@@ -113,6 +113,7 @@ const getSpecificLocation = (id) => call(`/v2/locations/${id}`, 'GET');
 const usersCoalitions = (page, size) => call('/v2/coalitions_users', 'GET', {
   'page[number]': page,
   'page[size]': size,
+  'filter[end]': false,
 });
 
 const usersCursus = (page, size) => call('/v2/cursus_users', 'GET', {
