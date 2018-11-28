@@ -118,6 +118,7 @@ const usersCoalitions = (page, size) => call('/v2/coalitions_users', 'GET', {
 const usersCursus = (page, size) => call('/v2/cursus_users', 'GET', {
   'page[number]': page,
   'page[size]': size,
+  'filter[end]': false,
 });
 
 const apps = (page, size) => call('/v2/apps', 'GET', {
