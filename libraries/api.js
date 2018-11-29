@@ -99,6 +99,7 @@ const getSubProjects = (projectId) => call(`/v2/projects/${projectId}/projects`,
 const getUsersCursus = (page, size) => call('/v2/cursus_users', 'GET', {
   'page[number]': page,
   'page[size]': size,
+  'filter[end]': false,
 });
 
 const getLocations = (page, size, start, end) => call('/v2/locations', 'GET', {
@@ -113,7 +114,6 @@ const getSpecificLocation = (id) => call(`/v2/locations/${id}`, 'GET');
 const usersCoalitions = (page, size) => call('/v2/coalitions_users', 'GET', {
   'page[number]': page,
   'page[size]': size,
-  'filter[end]': false,
 });
 
 const usersCursus = (page, size) => call('/v2/cursus_users', 'GET', {
