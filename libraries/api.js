@@ -12,19 +12,23 @@ const limiter = new Bottleneck({
   reservoirRefreshInterval: 60 * 1000 * 60, // one hour
 });
 
-const call = (endpoint, method, params, force) => {
+const isTokenExpired = () => {
   let currentDate = new Date();
   let tokenExpirationDate = new Date();
 
   if (APItoken) {
     tokenExpirationDate.setTime((APItoken.created_at + TOKEN_LIFETIME_IN_SECONDS) * 1000);
   }
-  if (!force && (!APItoken || currentDate.getTime() > tokenExpirationDate.getTime())) {
+  return (!APItoken || currentDate.getTime() > tokenExpirationDate.getTime());
+};
+
+const schedule = (prom) => limiter.schedule(() => prom());
+
+const call = (endpoint, method, params, force) => {
+  if (!force && isTokenExpired()) {
     return getToken()
       .then((token) => {
         APItoken = token;
-        tokenExpirationDate.setTime((APItoken.created_at + TOKEN_LIFETIME_IN_SECONDS) * 1000);
-        console.log('Token expire =>', tokenExpirationDate);
         return call(endpoint, method, params);
       });
   }
@@ -45,11 +49,11 @@ const call = (endpoint, method, params, force) => {
       fetchHeaders.Authorization = `Bearer ${APItoken.access_token}`;
     }
     console.info('New Api Call', url);
-    limiter.schedule(() => fetch(url, {
+    fetch(url, {
       method,
       headers: fetchHeaders,
       timeout: 25000, // 25 sec we are not to picky with 42Api
-    }))
+    })
       .then(res => {
         if (res.ok) {
           return res.json();
@@ -73,67 +77,67 @@ const getToken = () => call('/oauth/token', 'POST', {
   client_secret: process.env.FT_API_SECRET,
 }, true);
 
-const getCampus = () => call('/v2/campus', 'GET', {
+const getCampus = () => schedule(() => call('/v2/campus', 'GET', {
   'page[size]': 100,
-});
+}));
 
-const getCoalitions = (page, size) => call('/v2/coalitions', 'GET', {
+const getCoalitions = (page, size) => schedule(() => call('/v2/coalitions', 'GET', {
   'page[number]': page,
   'page[size]': size,
-});
+}));
 
-const getCursus = () => call('/v2/cursus', 'GET', {
+const getCursus = () => schedule(() => call('/v2/cursus', 'GET', {
   'page[size]': 100,
-});
+}));
 
-const getProjects = (page, size) => call('/v2/projects', 'GET', {
+const getProjects = (page, size) => schedule(() => call('/v2/projects', 'GET', {
   'page[number]': page,
   'page[size]': size,
-});
+}));
 
-const getSubProjects = (projectId) => call(`/v2/projects/${projectId}/projects`, 'GET', {
+const getSubProjects = (projectId) => schedule(() => call(`/v2/projects/${projectId}/projects`, 'GET', {
   'page[size]': 30,
-});
+}));
 
 
-const getUsersCursus = (page, size) => call('/v2/cursus_users', 'GET', {
+const getUsersCursus = (page, size) => schedule(() => call('/v2/cursus_users', 'GET', {
   'page[number]': page,
   'page[size]': size,
   'filter[end]': false,
-});
+}));
 
-const getLocations = (page, size, start, end) => call('/v2/locations', 'GET', {
+const getLocations = (page, size, start, end) => schedule(() => call('/v2/locations', 'GET', {
   sort: 'begin_at', // get older first
   'page[number]': page,
   'page[size]': size,
   'range[begin_at]': `${start},${end}`
-});
+}));
 
-const getSpecificLocation = (id) => call(`/v2/locations/${id}`, 'GET');
+const getSpecificLocation = (id) => schedule(() => call(`/v2/locations/${id}`, 'GET'));
 
-const usersCoalitions = (page, size) => call('/v2/coalitions_users', 'GET', {
+const usersCoalitions = (page, size) => schedule(() => call('/v2/coalitions_users', 'GET', {
   'page[number]': page,
   'page[size]': size,
-});
+}));
 
-const usersCursus = (page, size) => call('/v2/cursus_users', 'GET', {
+const usersCursus = (page, size) => schedule(() => call('/v2/cursus_users', 'GET', {
   'page[number]': page,
   'page[size]': size,
   'filter[end]': false,
-});
+}));
 
-const apps = (page, size) => call('/v2/apps', 'GET', {
+const apps = (page, size) => schedule(() => call('/v2/apps', 'GET', {
   'page[number]': page,
   'page[size]': size,
-});
+}));
 
-const getUsers = (page, size, id) => call('/v2/users', 'GET', {
+const getUsers = (page, size, id) => schedule(() => call('/v2/users', 'GET', {
   'page[number]': page,
   'page[size]': size,
   'range[id]': `${id},${id + 10000}`
-});
+}));
 
-const getUser = (id) => call(`/v2/users/${id}`, 'GET');
+const getUser = (id) => schedule(() => call(`/v2/users/${id}`, 'GET'));
 
 module.exports = {
   getCampus,
