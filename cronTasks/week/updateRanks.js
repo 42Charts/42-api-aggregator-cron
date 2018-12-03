@@ -3,7 +3,7 @@ const async = require('async');
 const mysql = require('../../libraries/database');
 
 const global = (ranks, cb) => {
-  let query = 'UPDATE USERS SET allRank=?, updated=now() WHERE ID=?';
+  let query = 'UPDATE USERS SET allRank=? WHERE ID=?';
   async.each(ranks, (rank, callback) => {
     values = [
       rank.rank,
@@ -18,7 +18,7 @@ const global = (ranks, cb) => {
 };
 
 const byPromo = (ranks, cb) => {
-  let query = 'UPDATE USERS SET promoRank=?, updated=now() WHERE ID=?';
+  let query = 'UPDATE USERS SET promoRank=? WHERE ID=?';
   async.eachLimit(ranks, 5, (rank, callback) => {
     values = [
       rank.rank,

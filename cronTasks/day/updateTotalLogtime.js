@@ -8,7 +8,7 @@ const updateTotalLogsTimes = () => new Promise((resolve, reject) => {
       return reject(err);
     }
     async.each(result, (row, callback) => {
-      mysql.query('UPDATE USERS SET totalLogTime=?, updated=now() WHERE ID=?', [row.totalLogTimeInSeconds, row.id], (err, result) => {
+      mysql.query('UPDATE USERS SET totalLogTime=? WHERE ID=?', [row.totalLogTimeInSeconds, row.id], (err, result) => {
         if (err) {
           return callback(err);
         }
