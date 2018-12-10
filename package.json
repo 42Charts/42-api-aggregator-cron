@@ -1,7 +1,7 @@
 {
-  "name": "42-charts-cron",
+  "name": "42-api-aggregator-cron",
   "version": "0.0.1",
-  "description": "Cron task for 42 charts",
+  "description": "A 42's api scapper with cron task used for 42 charts",
   "main": "index.js",
   "scripts": {
     "start": "nodemon ./index.js",
@@ -9,18 +9,21 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yfuks/42-charts-cron.git"
+    "url": "git+https://github.com/42Charts/42-api-aggregator-cron.git"
   },
   "keywords": [
+    "42Api",
     "cron",
-    "42charts"
+    "42charts",
+    "scrapping",
+    "update"
   ],
   "author": "yfuks",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/yfuks/42-charts-cron/issues"
+    "url": "https://github.com/42Charts/42-api-aggregator-cron/issues"
   },
-  "homepage": "https://github.com/yfuks/42-charts-cron#readme",
+  "homepage": "https://github.com/42Charts/42-api-aggregator-cron#readme",
   "devDependencies": {
     "nodemon": "^1.18.6"
   },
