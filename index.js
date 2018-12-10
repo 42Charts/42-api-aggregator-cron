@@ -26,7 +26,7 @@ cron.schedule('0 5 * * *', () => {
     .catch(err => console.log('Days task error', err));
 });
 
-cron.schedule('0 0 1 * *', () => { //
+cron.schedule('0 0 1 * *', () => {
   // every month the first day at 00:00
   cronMonths()
     .then()
